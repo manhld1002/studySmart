@@ -42,6 +42,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import vn.miagi.studysmart.domain.model.Subject
@@ -65,17 +66,18 @@ fun SubjectScreenRoute(
     navigator: DestinationsNavigator
 )
 {
-    val viewModel : SubjectViewModel = hiltViewModel()
+    val viewModel: SubjectViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     SubjectScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
         onBackButtonClick = { navigator.navigateUp() },
         onAddTaskButtonClick = {
-            val navArg =
-                TaskScreenNavArgs(taskId = null, subjectId = null)
+            val navArg = TaskScreenNavArgs(taskId = null, subjectId = null)
             navigator.navigate(TaskScreenRouteDestination(navArgs = navArg))
         },
         onTaskCardClick = { taskId ->
-            val navArg =
-                TaskScreenNavArgs(taskId = taskId, subjectId = null)
+            val navArg = TaskScreenNavArgs(taskId = taskId, subjectId = null)
             navigator.navigate(TaskScreenRouteDestination(navArgs = navArg))
         },
     )
@@ -84,6 +86,8 @@ fun SubjectScreenRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SubjectScreen(
+    state: SubjectState,
+    onEvent: (SubjectEvent) -> Unit,
     onBackButtonClick: () -> Unit,
     onAddTaskButtonClick: () -> Unit,
     onTaskCardClick: (Int?) -> Unit,
@@ -105,42 +109,48 @@ private fun SubjectScreen(
         mutableStateOf(false)
     }
 
-    var subjectName by remember { mutableStateOf("") }
-    var goalHours by remember { mutableStateOf("") }
-    var selectedColor by remember {
-        mutableStateOf(Subject.subjectCardColors.random())
-    }
 
     AddSubjectDialog(
         isOpen = isAddSubjectDialogOpen,
-        subjectName = subjectName,
-        goalHours = goalHours,
-        onSubjectNameChange = { subjectName = it },
-        onGoalHoursChange = { goalHours = it },
-        selectedColors = selectedColor,
-        onColorChange = { selectedColor = it },
+        subjectName = state.subjectName,
+        goalHours = state.goalStudyHours,
+        onSubjectNameChange = { onEvent(SubjectEvent.OnSubjectNameChange(it)) },
+        onGoalHoursChange = { onEvent(SubjectEvent.OnGoalStudyHoursChange(it)) },
+        selectedColors = state.subjectCardColors,
+        onColorChange = { onEvent(SubjectEvent.OnSubjectCardColorChange(it)) },
         onDismissRequest = {
             isAddSubjectDialogOpen = false
         },
         onConfirmButtonClick = {
+            onEvent(SubjectEvent.UpdateSubject)
             isAddSubjectDialogOpen = false
         },
     )
 
-    DeleteDialog(
-        isOpen = isDeleteSessionDialogOpen,
+    DeleteDialog(isOpen = isDeleteSubjectDialogOpen,
         title = "Delete Subject?",
         bodyText = "Do you want to delete this subject? All related tasks and study sessions will be permanently removed. This action can not be undone.",
+        onDismissRequest = { isDeleteSubjectDialogOpen = false },
+        onConfirmButtonClick = {
+            onEvent(SubjectEvent.DeleteSubject)
+            isDeleteSubjectDialogOpen = false
+        })
+
+    DeleteDialog(isOpen = isDeleteSessionDialogOpen,
+        title = "Delete Session?",
+        bodyText = "Do you want to delete this session? Your studied hours will be reduced by this session time. This action can not be undone.",
         onDismissRequest = { isDeleteSessionDialogOpen = false },
-        onConfirmButtonClick = { isDeleteSessionDialogOpen = false }
-    )
+        onConfirmButtonClick = {
+            onEvent(SubjectEvent.DeleteSession)
+            isDeleteSessionDialogOpen = false
+        })
 
     Scaffold(
         // notify scroll behavior for the scaffold
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             SubjectScreenTopBar(
-                title = "English",
+                title = state.subjectName,
                 onBackButtonClick = onBackButtonClick,
                 onDeleteButtonClick = {
                     isDeleteSubjectDialogOpen = true
@@ -163,8 +173,7 @@ private fun SubjectScreen(
                 text = { Text(text = "Add Task") },
                 expanded = isFABExpanded
             )
-        }
-    ) { paddingValues ->
+        }) { paddingValues ->
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -176,33 +185,46 @@ private fun SubjectScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    studiedHours = "10",
-                    goalHours = "15",
-                    progress = 0.75f,
+                    studiedHours = state.goalStudyHours,
+                    goalHours = state.studiedHours.toString(),
+                    progress = state.progress,
                 )
             }
             item {
                 TasksList(
                     sectionTitle = "UPCOMING TASKS",
                     emptyListText = "You don't have any upcoming tasks. \n Click the + button to add new task",
-                    tasksList = tasks,
-                    onCheckBoxClick = {},
+                    tasksList = state.upcomingTasks,
+                    onCheckBoxClick = {
+                        onEvent(
+                            SubjectEvent.OnTaskIsCompleteChange(
+                                it
+                            )
+                        )
+                    },
                     onTaskCardClick = onTaskCardClick,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 TasksList(
                     sectionTitle = "COMPLETED TASKS",
                     emptyListText = "You don't have any completed tasks. \n Click the check box on completion of task",
-                    tasksList = tasks,
-                    onCheckBoxClick = {},
+                    tasksList = state.completedTasks,
+                    onCheckBoxClick = {
+                        onEvent(
+                            SubjectEvent.OnTaskIsCompleteChange(
+                                it
+                            )
+                        )
+                    },
                     onTaskCardClick = onTaskCardClick,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 StudySessionsList(
                     sectionTitle = "RECENT STUDY SESSIONS",
                     emptyListText = "You don't have any recent study sessions. \n Start a study session to begin recording your progress",
-                    sessions = sessions,
+                    sessions = state.recentSessions,
                     onDeleteIconClick = {
+                        onEvent(SubjectEvent.OnDeleteSessionButtonClick(it))
                         isDeleteSessionDialogOpen = true
                     },
                 )
@@ -221,42 +243,40 @@ private fun SubjectScreenTopBar(
     scrollBehavior: TopAppBarScrollBehavior
 )
 {
-    LargeTopAppBar(
-        scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            IconButton(
-                onClick = onBackButtonClick
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "navigate back"
-                )
-            }
-        }, title = {
-            Text(
-                text = title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.headlineSmall
+    LargeTopAppBar(scrollBehavior = scrollBehavior, navigationIcon = {
+        IconButton(
+            onClick = onBackButtonClick
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "navigate back"
             )
-        }, actions = {
-            IconButton(
-                onClick = onDeleteButtonClick
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Subject"
-                )
-            }
-            IconButton(
-                onClick = onEditButtonClick
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Subject"
-                )
-            }
-        })
+        }
+    }, title = {
+        Text(
+            text = title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.headlineSmall
+        )
+    }, actions = {
+        IconButton(
+            onClick = onDeleteButtonClick
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete Subject"
+            )
+        }
+        IconButton(
+            onClick = onEditButtonClick
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit Subject"
+            )
+        }
+    })
 }
 
 @Composable
@@ -289,8 +309,7 @@ private fun SubjectOverviewSection(
         )
         Spacer(modifier = Modifier.width(10.dp))
         Box(
-            modifier = Modifier.size(75.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.size(75.dp), contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.fillMaxSize(),
