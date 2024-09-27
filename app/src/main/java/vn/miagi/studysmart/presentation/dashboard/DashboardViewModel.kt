@@ -67,6 +67,7 @@ class DashboardViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    // Implement for snackbar event
     private val _snackBarEventFlow = MutableSharedFlow<SnackBarEvent>()
     val snackBarEventFlow = _snackBarEventFlow.asSharedFlow()
 
@@ -76,9 +77,7 @@ class DashboardViewModel @Inject constructor(
         {
             DashboardEvent.DeleteSession ->
             {
-                _state.update {
-                    it.copy()
-                }
+
             }
 
             is DashboardEvent.OnDeleteSessionButtonClick ->
@@ -111,12 +110,34 @@ class DashboardViewModel @Inject constructor(
 
             is DashboardEvent.OnTaskIsCompleteChange ->
             {
-                _state.update {
-                    it.copy()
-                }
+                updateTask(task = event.task)
             }
 
             DashboardEvent.SaveSubject -> saveSubject()
+        }
+    }
+
+    private fun updateTask(task: Task)
+    {
+        viewModelScope.launch {
+            try
+            {
+                taskRepository.upsertTask(task = task.copy(isComplete = !task.isComplete))
+                _snackBarEventFlow.emit(
+                    SnackBarEvent.ShowSnackBar(
+                        message = "Saved in completed tasks."
+                    )
+                )
+            } catch (e: Exception)
+            {
+                _snackBarEventFlow.emit(
+                    SnackBarEvent.ShowSnackBar(
+                        message = "Couldn't update task. ${e.message}",
+                        SnackbarDuration.Long
+                    )
+                )
+            }
+
         }
     }
 

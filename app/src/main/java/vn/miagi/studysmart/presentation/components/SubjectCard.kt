@@ -49,6 +49,7 @@ fun SubjectCard(
                 text = subjectName,
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
+                maxLines = 1,
             )
         }
     }

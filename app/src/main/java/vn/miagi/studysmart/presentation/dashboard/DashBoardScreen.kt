@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -63,7 +64,8 @@ import vn.miagi.studysmart.presentation.subject.SubjectScreenNavArgs
 import vn.miagi.studysmart.presentation.task.TaskScreenNavArgs
 import vn.miagi.studysmart.util.SnackBarEvent
 
-@Destination(start = true)
+@RootNavGraph(start = true)
+@Destination()
 @Composable
 fun DashboardScreenRoute(
     navigator: DestinationsNavigator
@@ -136,6 +138,11 @@ private fun DashboardScreen(
                         message = event.message,
                         duration = event.duration,
                     )
+                }
+
+                SnackBarEvent.NavigateUp ->
+                {
+                    TODO()
                 }
             }
         }

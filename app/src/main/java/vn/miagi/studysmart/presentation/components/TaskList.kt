@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import vn.miagi.studysmart.R
 import vn.miagi.studysmart.domain.model.Task
 import vn.miagi.studysmart.util.Priority
+import vn.miagi.studysmart.util.changeMillisToDateString
 
 @Composable
 fun TasksList(
@@ -129,7 +130,7 @@ private fun TaskCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${task.dueDate}",
+                    text = task.dueDate.changeMillisToDateString(),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
