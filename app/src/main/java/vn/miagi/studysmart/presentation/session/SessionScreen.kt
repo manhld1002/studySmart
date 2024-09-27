@@ -33,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +45,9 @@ import vn.miagi.studysmart.presentation.components.StudySessionsList
 import vn.miagi.studysmart.presentation.components.SubjectListBottomSheet
 import vn.miagi.studysmart.sessions
 import vn.miagi.studysmart.subjects
+import vn.miagi.studysmart.util.Constants.ACTION_SERVICE_CANCEL
+import vn.miagi.studysmart.util.Constants.ACTION_SERVICE_START
+import vn.miagi.studysmart.util.Constants.ACTION_SERVICE_STOP
 
 @Destination
 @Composable
@@ -51,7 +55,7 @@ fun SessionScreenRoute(
     navigator: DestinationsNavigator
 )
 {
-    val viewModel : SessionViewModel = hiltViewModel()
+    val viewModel: SessionViewModel = hiltViewModel()
     SessionScreen(
         onBackButtonClick = { navigator.navigateUp() }
     )
@@ -64,6 +68,7 @@ private fun SessionScreen(
 )
 {
 
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
     var isBottomSheetOpen by remember {
@@ -136,9 +141,24 @@ private fun SessionScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    startButtonClick = { /*TODO*/ },
-                    cancelButtonClick = { /*TODO*/ },
-                    finishButtonClick = {},
+                    startButtonClick = {
+                        ServiceHelper.triggerForeGroundService(
+                            context = context,
+                            action = ACTION_SERVICE_START,
+                        )
+                    },
+                    cancelButtonClick = {
+                        ServiceHelper.triggerForeGroundService(
+                            context = context,
+                            action = ACTION_SERVICE_CANCEL,
+                        )
+                    },
+                    finishButtonClick = {
+                        ServiceHelper.triggerForeGroundService(
+                            context = context,
+                            action = ACTION_SERVICE_STOP,
+                        )
+                    },
                 )
             }
             item {
