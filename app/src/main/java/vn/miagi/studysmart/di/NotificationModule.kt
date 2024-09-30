@@ -10,6 +10,7 @@ import dagger.hilt.android.components.ServiceComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ServiceScoped
 import vn.miagi.studysmart.R
+import vn.miagi.studysmart.presentation.session.ServiceHelper
 import vn.miagi.studysmart.util.Constants.NOTIFICATION_CHANNEL_ID
 
 @Module
@@ -29,6 +30,7 @@ object NotificationModule
                 R.drawable.ic_launcher_foreground
             )
             .setOngoing(true)
+            .setContentIntent(ServiceHelper.clickPendingIntent(context))
     }
 
     // Create notification manager object

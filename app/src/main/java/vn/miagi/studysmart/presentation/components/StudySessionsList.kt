@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import vn.miagi.studysmart.R
 import vn.miagi.studysmart.domain.model.Session
+import vn.miagi.studysmart.util.changeMillisToDateString
+import vn.miagi.studysmart.util.toHours
 
 @Composable
 fun StudySessionsList(
@@ -76,8 +78,6 @@ fun StudySessionsList(
             )
         }
 
-        // You can add additional tasks here if the list is not empty
-
     }
 
 }
@@ -107,14 +107,14 @@ private fun StudySessionCard(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "${session.date}",
+                    text = session.date.changeMillisToDateString(),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
             // Take maximum space between two composable that's it in
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "${session.duration} hr",
+                text = "${session.duration.toHours()} hr",
                 style = MaterialTheme.typography.titleMedium,
             )
             IconButton(onClick = {

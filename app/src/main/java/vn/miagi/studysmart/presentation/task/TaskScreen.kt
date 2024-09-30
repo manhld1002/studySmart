@@ -56,8 +56,6 @@ import vn.miagi.studysmart.presentation.components.DeleteDialog
 import vn.miagi.studysmart.presentation.components.SubjectListBottomSheet
 import vn.miagi.studysmart.presentation.components.TaskCheckBox
 import vn.miagi.studysmart.presentation.components.TaskDatePicker
-import vn.miagi.studysmart.presentation.theme.Red
-import vn.miagi.studysmart.subjects
 import vn.miagi.studysmart.util.Priority
 import vn.miagi.studysmart.util.SnackBarEvent
 import vn.miagi.studysmart.util.changeMillisToDateString
